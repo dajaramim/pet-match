@@ -1,181 +1,162 @@
-# Pet Match - CRUD de Mascotas para Gestión de Cruza Responsable
+# Pet Match
 
-Prototipo funcional de un CRUD desarrollado con Django 1.11.6 para gestionar mascotas en Quilpué.
+Plataforma de cruza responsable de mascotas. Backend Django con API REST + Frontend Flutter Web/Mobile.
 
-## 📋 Requisitos Técnicos Cumplidos
-
-✅ Django 1.11.6 con patrón arquitectónico MVT  
-✅ Aplicación llamada "movies" (compatibilidad profesor) con lógica Pet Match  
-✅ Modelos: Breeds (Razas) y Pets (Mascotas) con relación ForeignKey  
-✅ Vistas basadas en funciones (FBV) para CRUD completo  
-✅ Decorador @login_required en vistas de creación y edición  
-✅ Formularios: ModelForm para Pets y LoginForm para autenticación  
-✅ Configuración de MEDIA y STATIC en settings.py  
-✅ Soporte para Pillow (procesamiento de imágenes)  
-✅ django-widget-tweaks para mejora de formularios  
-
-## 📁 Estructura del Proyecto
+## Estructura del proyecto
 
 ```
-crud/
-├── manage.py
-├── requirements.txt
-├── petmatch/
-│   ├── __init__.py
-│   ├── settings.py       # Configuración del proyecto
-│   ├── urls.py           # URLs principales
-│   └── wsgi.py
-├── movies/               # Aplicación principal
-│   ├── models.py         # Modelos Breeds y Pets
-│   ├── views.py          # Vistas FBV para CRUD
-│   ├── forms.py          # Formularios ModelForm
-│   ├── urls.py           # URLs de la app
-│   ├── admin.py          # Admin personalizado
-│   ├── apps.py
-│   ├── tests.py
-│   └── templates/
-│       └── movies/
-│           ├── base.html
-│           ├── index.html
-│           ├── login.html
-│           ├── register.html
-│           ├── pet_list.html
-│           ├── pet_detail.html
-│           ├── pet_form.html
-│           └── pet_confirm_delete.html
-├── media/                # Archivos subidos por usuarios
-└── staticfiles/          # Archivos estáticos compilados
+pet-match/
+├── petmatch/              # Configuración Django
+├── movies/                # App principal (models, views, API)
+│   ├── models.py          # Modelos Breeds y Pets
+│   ├── views.py           # Vistas web (templates)
+│   ├── api_views.py       # API REST endpoints
+│   ├── api_urls.py        # Rutas de la API
+│   └── serializers.py     # Serializers DRF
+├── flutter_app/           # App Flutter (mobile + web)
+│   ├── lib/
+│   │   ├── main.dart      # UI principal
+│   │   └── api_service.dart # Conexión con la API
+│   └── build/web/         # Build web para Vercel
+├── templates/             # Templates Django
+├── vercel.json            # Config deploy Vercel
+└── requirements.txt       # Dependencias Python
 ```
 
-## 🚀 Instalación
+## Requisitos
 
-### 1. Crear ambiente virtual (si no existe)
+- Python 3.10+
+- Flutter SDK 3.11+ (para desarrollo mobile)
+- pip
+
+## Instalación y ejecución local
+
+### 1. Backend Django
+
 ```bash
-python -m venv env
-env\Scripts\activate  # Windows
-```
+# Clonar el repositorio
+git clone https://github.com/dajaramim/pet-match.git
+cd pet-match
 
-### 2. Instalar dependencias
-```bash
+# Crear y activar ambiente virtual
+python3 -m venv env
+source env/bin/activate        # macOS/Linux
+# env\Scripts\activate         # Windows
+
+# Instalar dependencias
 pip install -r requirements.txt
-```
 
-### 3. Realizar migraciones
-```bash
+# Crear base de datos y migraciones
 python manage.py migrate
-```
 
-### 4. Crear superusuario (admin)
-```bash
+# Crear superusuario
 python manage.py createsuperuser
+
+# (Opcional) Cargar datos de prueba
+python load_test_data.py
+
+# Iniciar servidor
+python manage.py runserver 0.0.0.0:8000
 ```
 
-### 5. Ejecutar servidor de desarrollo
+El backend queda disponible en:
+- Web: http://localhost:8000
+- API: http://localhost:8000/api/
+- Admin: http://localhost:8000/admin
+
+### 2. Flutter App (mobile)
+
 ```bash
-python manage.py runserver
+cd flutter_app
+
+# Instalar dependencias Dart
+flutter pub get
+
+# Ejecutar en dispositivo/emulador
+flutter run
 ```
 
-Accede a:
-- **Sitio web:** http://localhost:8000
-- **Admin:** http://localhost:8000/admin
+**Configurar URL del backend:**
 
-## 📚 Funcionalidades
+En `lib/api_service.dart`, la URL se configura automáticamente según la plataforma:
+- Android emulador: `http://10.0.2.2:8000`
+- iOS simulador / macOS: `http://localhost:8000`
+- Dispositivo físico: cambiar a tu IP local (ej: `http://192.168.1.100:8000`)
 
-### Autenticación
-- Registro de nuevos usuarios
-- Login/Logout
-- Protección de vistas con @login_required
+Para cambiar la IP manualmente, edita la línea correspondiente en `lib/main.dart`:
+```dart
+ApiService.setBaseUrl('http://TU_IP:8000');
+```
 
-### Mascotas (CRUD)
-- **Listar**: Ver todas las mascotas disponibles con filtros y búsqueda
-- **Ver Detalle**: Información completa de la mascota
-- **Crear**: Agregar nueva mascota (requiere login)
-- **Editar**: Modificar datos de mascota (solo dueño)
-- **Eliminar**: Borrar mascota (solo dueño)
+## Endpoints de la API
 
-### Características Especiales
-- Gestión de razas (Breeds)
-- Información de salud y genética
-- Subida de fotos
-- Certificados de salud
-- Cálculo automático de edad
-- Filtros por raza y búsqueda
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| POST | `/api/login/` | No | Login, retorna token |
+| POST | `/api/register/` | No | Registro de usuario |
+| GET | `/api/pets/` | No | Listar mascotas disponibles |
+| GET | `/api/pets/<id>/` | No | Detalle de mascota |
+| GET | `/api/my-pets/` | Token | Mis mascotas |
+| POST | `/api/pets/create/` | Token | Crear mascota |
+| PUT | `/api/pets/<id>/edit/` | Token | Editar mascota |
+| DELETE | `/api/pets/<id>/delete/` | Token | Eliminar mascota |
+| GET | `/api/breeds/` | No | Listar razas |
 
-## 🗂️ Modelos de Datos
+**Autenticación:** Enviar header `Authorization: Token <tu_token>`
 
-### Breeds (Razas)
-- name: CharField
-- description: TextField
-- characteristics: TextField
-- created_at: DateTimeField
-- updated_at: DateTimeField
+## Deploy a Vercel (Frontend Flutter Web)
 
-### Pets (Mascotas)
-- owner: ForeignKey(User)
-- breed: ForeignKey(Breeds)
-- name: CharField
-- gender: CharField (choices: M/F)
-- birth_date: DateField
-- description: TextField (salud/genética)
-- image: ImageField
-- health_certificate: FileField (opcional)
-- is_available: BooleanField
-- created_at: DateTimeField
-- updated_at: DateTimeField
+El frontend Flutter Web ya está pre-compilado en `flutter_app/build/web/`.
 
-## 🔒 Seguridad
+### Opción 1: Deploy automático con GitHub
 
-- Autenticación requerida para crear/editar mascotas
-- Solo dueños pueden editar/eliminar sus mascotas
-- CSRF protection en todos los formularios
-- Validación de imágenes (máximo 5MB)
-- SQL injection prevención (Django ORM)
+1. Ir a [vercel.com](https://vercel.com) e iniciar sesión
+2. Click en "Add New Project"
+3. Importar el repositorio `dajaramim/pet-match`
+4. Vercel detecta el `vercel.json` automáticamente
+5. Click en "Deploy"
 
-## 🎨 Interfaz de Usuario
+El `vercel.json` ya está configurado para servir `flutter_app/build/web/`.
 
-- Diseño responsivo con Bootstrap 4
-- Navegación intuitiva
-- Gradientes modernos (púrpura y azul)
-- Cards interactivas con hover effects
-- Formularios con validación en cliente
-- Alertas y mensajes de estado
+### Opción 2: Deploy manual con CLI
 
-## 🧪 Testing
-
-Ejecutar tests:
 ```bash
-python manage.py test movies
+# Instalar Vercel CLI
+npm i -g vercel
+
+# Desde la raíz del proyecto
+cd pet-match
+vercel
 ```
 
-## 📝 Notas
+### Actualizar el build web
 
-- Los archivos de usuarios se guardan en: `media/pets/` y `media/certificates/`
-- Los archivos estáticos se sirven desde: `staticfiles/`
-- Base de datos SQLite en: `db.sqlite3`
-- Configurado para desarrollo (DEBUG=True)
+Si modificas el código Flutter y necesitas actualizar el build:
 
-## 🔧 Configuración para Producción
-
-Cambiar en `petmatch/settings.py`:
-```python
-DEBUG = False
-SECRET_KEY = 'usar-valor-seguro'
-ALLOWED_HOSTS = ['tu-dominio.com']
-```
-
-Ejecutar:
 ```bash
-python manage.py collectstatic
+cd flutter_app
+flutter build web
 ```
 
-## 📞 Contacto & Soporte
+Luego haz commit y push. Vercel re-despliega automáticamente.
 
-Desarrollado para la Universidad UNAB - Quilpué, Chile
-Proyecto Universitario: Pet Match - Plataforma de Cruza Responsable
+### Nota sobre el backend en producción
 
----
+El frontend en Vercel es solo la parte visual (Flutter Web). Para que funcione con datos reales, necesitas el backend Django corriendo en algún servidor. Opciones:
 
-**Versión:** 1.0  
-**Django:** 1.11.6  
-**Python:** 3.x  
-**Última actualización:** 2026
+- **Railway** / **Render** / **PythonAnywhere** para el backend Django
+- Actualizar `ApiService.setBaseUrl()` en el código Flutter para apuntar a la URL del backend en producción
+- Reconstruir el build web con la URL correcta
+
+## Usuarios de prueba
+
+| Usuario | Contraseña | Rol |
+|---------|-----------|-----|
+| admin | admin123 | Superusuario |
+| daniel | 1234 | Usuario normal |
+
+## Tecnologías
+
+- **Backend:** Django 4.2, Django REST Framework, SQLite
+- **Frontend Mobile/Web:** Flutter 3.11, Dart
+- **Deploy:** Vercel (frontend), compatible con Railway/Render (backend)
