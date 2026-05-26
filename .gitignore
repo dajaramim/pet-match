@@ -4,6 +4,9 @@
 *.so
 .Python
 build/
+!flutter_app/build/
+flutter_app/build/*
+!flutter_app/build/web/
 develop-eggs/
 dist/
 downloads/
