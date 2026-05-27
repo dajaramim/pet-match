@@ -104,13 +104,38 @@ ApiService.setBaseUrl('http://TU_IP:8000');
 
 **Autenticación:** Enviar header `Authorization: Token <tu_token>`
 
-## Deploy a Vercel (Frontend Flutter Web)
+## Deploy
 
-El frontend Flutter Web ya está pre-compilado en `flutter_app/build/web/`.
+El proyecto se despliega en dos servicios gratuitos:
+- **Vercel** → Frontend Flutter Web
+- **Render** → Backend Django API
 
-### Opción 1: Deploy automático con GitHub
+### Paso 1: Deploy del Backend en Render
 
-1. Ir a [vercel.com](https://vercel.com) e iniciar sesión
+1. Ir a [render.com](https://render.com) y crear cuenta con GitHub
+2. Click en "New" → "Web Service"
+3. Conectar el repositorio `dajaramim/pet-match`
+4. Configurar:
+   - **Name:** `pet-match-api`
+   - **Runtime:** Python 3
+   - **Build Command:** `./build.sh`
+   - **Start Command:** `gunicorn petmatch.wsgi:application`
+5. En "Environment Variables", agregar:
+   - `SECRET_KEY` = (generar una clave segura)
+   - `DEBUG` = `False`
+   - `ALLOWED_HOSTS` = `pet-match-api.onrender.com`
+6. Click "Create Web Service"
+
+Tu backend quedará en: `https://pet-match-api.onrender.com`
+
+Prueba que funcione:
+```
+https://pet-match-api.onrender.com/api/pets/
+```
+
+### Paso 2: Deploy del Frontend en Vercel
+
+1. Ir a [vercel.com](https://vercel.com) e iniciar sesión con GitHub
 2. Click en "Add New Project"
 3. Importar el repositorio `dajaramim/pet-match`
 4. Vercel detecta el `vercel.json` automáticamente
@@ -118,35 +143,43 @@ El frontend Flutter Web ya está pre-compilado en `flutter_app/build/web/`.
 
 El `vercel.json` ya está configurado para servir `flutter_app/build/web/`.
 
-### Opción 2: Deploy manual con CLI
+### Paso 3: Conectar Frontend con Backend
+
+Una vez que tengas la URL de Render, actualiza la URL del API en Flutter:
+
+1. Editar `flutter_app/lib/api_service.dart`:
+   ```dart
+   static String baseUrl = 'https://pet-match-api.onrender.com';
+   ```
+
+2. Editar `flutter_app/lib/main.dart` (reemplazar la sección de configuración de URL):
+   ```dart
+   ApiService.setBaseUrl('https://pet-match-api.onrender.com');
+   ```
+
+3. Reconstruir Flutter Web:
+   ```bash
+   cd flutter_app
+   flutter build web
+   ```
+
+4. Commit y push → Vercel re-despliega automáticamente.
+
+### Crear datos iniciales en Render
+
+Después del deploy, ve a Render → tu servicio → "Shell" tab y ejecuta:
 
 ```bash
-# Instalar Vercel CLI
-npm i -g vercel
-
-# Desde la raíz del proyecto
-cd pet-match
-vercel
+python manage.py createsuperuser
+python load_test_data.py
 ```
 
-### Actualizar el build web
+### Notas sobre el tier gratis de Render
 
-Si modificas el código Flutter y necesitas actualizar el build:
-
-```bash
-cd flutter_app
-flutter build web
-```
-
-Luego haz commit y push. Vercel re-despliega automáticamente.
-
-### Nota sobre el backend en producción
-
-El frontend en Vercel es solo la parte visual (Flutter Web). Para que funcione con datos reales, necesitas el backend Django corriendo en algún servidor. Opciones:
-
-- **Railway** / **Render** / **PythonAnywhere** para el backend Django
-- Actualizar `ApiService.setBaseUrl()` en el código Flutter para apuntar a la URL del backend en producción
-- Reconstruir el build web con la URL correcta
+- El servicio se apaga tras 15 minutos sin tráfico
+- La primera petición después de inactividad tarda ~30 segundos (cold start)
+- La base de datos SQLite se reinicia con cada deploy (los datos no persisten entre deploys)
+- Para datos persistentes, usar PostgreSQL (Render ofrece PostgreSQL gratis por 90 días)
 
 ## Usuarios de prueba
 
